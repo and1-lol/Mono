@@ -16,7 +16,7 @@ def movement(past_price, m_confid): #is to also be called idlely
   if past_price <= 0:
     past_price = 10
     m_confid = 30
-  return past_price
+  return past_price, m_confid
 
 def wager(bal, amount, current, p_confid):
   bench = current
