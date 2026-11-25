@@ -79,21 +79,58 @@ h1 {
   margin-top: 9px;
 }
 
-.market-price {
-  font-size: 38px;
-  font-weight: bold;
-  margin-top: 8px;
+.graph-panel {
+  min-height: 390px;
 }
 
-.graph-panel {
-  min-height: 350px;
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.change {
+  font-size: 19px;
+  font-weight: bold;
+}
+
+.positive { color: #20b77a; }
+.negative { color: #df4c59; }
+.neutral { color: #aab5c8; }
+
+.range-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 15px;
+}
+
+.range {
+  background: #30394b;
+  color: #aab5c8;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.range.active {
+  background: #20a879;
+  color: white;
 }
 
 canvas {
   width: 100%;
   height: 260px;
   display: block;
-  margin-top: 15px;
+  margin-top: 12px;
+}
+
+.graph-footer {
+  display: flex;
+  justify-content: space-between;
+  color: #9ca8bb;
+  font-size: 11px;
+  margin-top: 8px;
 }
 
 .wager-panel {
@@ -168,8 +205,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .market-price { font-size: 31px; }
-  .graph-panel { min-height: 300px; }
+  .graph-panel { min-height: 350px; }
   canvas { height: 220px; }
 }
 </style>
@@ -201,9 +237,26 @@ button:disabled {
     </div>
 
     <div class="panel graph-panel">
-      <div class="label">Fork Coin</div>
+
+      <div class="graph-header">
+        <div class="label">Fork Coin</div>
+        <div id="change" class="change neutral">--</div>
+      </div>
+
+      <div class="range-buttons">
+        <button class="range" data-range="60">30 sec</button>
+        <button class="range" data-range="600">5 min</button>
+        <button class="range active" data-range="all">All time</button>
+      </div>
+
       <canvas id="chart"></canvas>
-      <div class="label">Live price history</div>
+
+      <div class="graph-footer">
+        <span id="graph-start">Start</span>
+        <span>Live price history</span>
+        <span>Now</span>
+      </div>
+
     </div>
 
   </div>
@@ -252,6 +305,7 @@ let lastBalance = 0;
 let lastConfidence = 50;
 
 let history = [];
+let graphRange = "all";
 
 const $ = id => document.getElementById(id);
 
@@ -269,10 +323,76 @@ function display(data) {
 }
 
 
+// BUTTON CONTROLS
+
 function controls(enabled) {
   $("up").disabled = !enabled;
   $("down").disabled = !enabled;
   $("reset").disabled = !enabled;
+}
+
+
+// PERCENTAGE CHANGE
+
+function updateChange() {
+  const element = $("change");
+
+  // Compare the current price with the price 60 ticks ago.
+  if (history.length < 61) {
+    element.textContent = "--";
+    element.className = "change neutral";
+    return;
+  }
+
+  const oldPrice = history[history.length - 61];
+  const currentPrice = history[history.length - 1];
+
+  if (oldPrice === 0) {
+    element.textContent = "--";
+    element.className = "change neutral";
+    return;
+  }
+
+  const percentage = ((currentPrice - oldPrice) / oldPrice) * 100;
+
+  const sign = percentage > 0 ? "+" : "";
+
+  element.textContent = sign + percentage.toFixed(2) + "%";
+
+  if (percentage > 0) {
+    element.className = "change positive";
+  } else if (percentage < 0) {
+    element.className = "change negative";
+  } else {
+    element.className = "change neutral";
+  }
+}
+
+
+// GRAPH RANGE
+
+function setGraphRange(range) {
+  graphRange = range;
+
+  document.querySelectorAll(".range").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.range === String(range)
+    );
+  });
+
+  drawGraph();
+}
+
+
+// GET VISIBLE HISTORY
+
+function getVisibleHistory() {
+  if (graphRange === "all") {
+    return history;
+  }
+
+  return history.slice(-Number(graphRange));
 }
 
 
@@ -281,60 +401,140 @@ function controls(enabled) {
 function drawGraph() {
   const canvas = $("chart");
   const rect = canvas.getBoundingClientRect();
+
+  if (!rect.width || !rect.height) return;
+
   const dpr = window.devicePixelRatio || 1;
 
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
 
   const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const width = rect.width;
   const height = rect.height;
 
   ctx.clearRect(0, 0, width, height);
 
-  if (history.length < 2) return;
+  const visible = getVisibleHistory();
 
-  const min = Math.min(...history);
-  const max = Math.max(...history);
-  const range = Math.max(max - min, 1);
+  if (visible.length === 0) return;
 
-  ctx.strokeStyle = "#3a465b";
-  ctx.lineWidth = 1;
+  // Reserve room for the Y-axis labels.
+  const left = 48;
+  const right = width - 10;
+  const top = 15;
+  const bottom = height - 25;
 
-  for (let i = 0; i < 4; i++) {
-    const y = i * height / 3;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
+  const graphWidth = right - left;
+  const graphHeight = bottom - top;
+
+  // Find minimum and maximum without spreading a huge array.
+  let min = visible[0];
+  let max = visible[0];
+
+  for (const price of visible) {
+    if (price < min) min = price;
+    if (price > max) max = price;
   }
 
+  // Give the graph some breathing room.
+  let range = max - min;
+
+  if (range < 1) range = 1;
+
+  const padding = range * 0.12;
+
+  min -= padding;
+  max += padding;
+
+  range = max - min;
+
+  // Grid and Y-axis labels.
+  ctx.font = "11px Arial";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i <= 4; i++) {
+    const fraction = i / 4;
+    const y = bottom - fraction * graphHeight;
+    const price = min + fraction * range;
+
+    ctx.strokeStyle = "#3a465b";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(right, y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#9ca8bb";
+    ctx.fillText(price.toFixed(2), left - 7, y);
+  }
+
+  // Vertical axis.
+  ctx.strokeStyle = "#46516a";
   ctx.beginPath();
-
-  history.forEach((price, i) => {
-    const x = i / (history.length - 1) * width;
-    const y = height - ((price - min) / range * (height - 24) + 12);
-
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-
-  ctx.strokeStyle = "#20b77a";
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = "round";
+  ctx.moveTo(left, top);
+  ctx.lineTo(left, bottom);
   ctx.stroke();
+
+  // Horizontal axis.
+  ctx.beginPath();
+  ctx.moveTo(left, bottom);
+  ctx.lineTo(right, bottom);
+  ctx.stroke();
+
+  // Price line.
+  if (visible.length > 1) {
+    ctx.beginPath();
+
+    visible.forEach((price, i) => {
+      const x = left + (i / (visible.length - 1)) * graphWidth;
+      const y = bottom - ((price - min) / range) * graphHeight;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+
+    ctx.strokeStyle = "#20b77a";
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    // Current price point.
+    const lastY =
+      bottom - ((visible[visible.length - 1] - min) / range) * graphHeight;
+
+    ctx.beginPath();
+    ctx.arc(right, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#20b77a";
+    ctx.fill();
+  }
+
+  // X-axis labels.
+  ctx.fillStyle = "#9ca8bb";
+  ctx.font = "10px Arial";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("Earlier", left, bottom + 8);
+
+  ctx.textAlign = "right";
+  ctx.fillText("Now", right, bottom + 8);
 }
 
+
+// ADD PRICE TO HISTORY
 
 function addPrice(price) {
   history.push(price);
 
-  if (history.length > 100) {
-    history.shift();
-  }
-
+  updateChange();
   drawGraph();
 }
 
@@ -427,7 +627,7 @@ async function startRound(choice) {
   direction = choice;
   wagerAmount = amount;
 
-  // Record the market price at the time of the wager.
+  // Record the price when the wager begins.
   startingPrice = lastPrice;
 
   controls(false);
@@ -554,7 +754,6 @@ def ui_settle(amount, direction, starting_price):
     await initializeGame();
 
     // Start the market ONCE.
-    // It continues running independently of wagers.
     if (marketTimer === null) {
       marketTick();
     }
@@ -567,7 +766,7 @@ def ui_settle(amount, direction, starting_price):
 }
 
 
-// BUTTONS
+// BUTTON EVENTS
 
 $("up").addEventListener("click", () => {
   startRound("up");
@@ -581,6 +780,13 @@ $("reset").addEventListener("click", async () => {
   if (!roundActive) {
     await initializeGame();
   }
+});
+
+// Graph range buttons.
+document.querySelectorAll(".range").forEach(button => {
+  button.addEventListener("click", () => {
+    setGraphRange(button.dataset.range);
+  });
 });
 
 window.addEventListener("resize", drawGraph);
