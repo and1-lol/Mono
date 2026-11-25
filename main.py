@@ -15,6 +15,7 @@ def movement(past_price, m_confid): #is to also be called idlely
     past_price -= fluct * 2
   if past_price <= 0:
     past_price = 10
+    m_confid = 30
   return past_price
 
 def wager(bal, amount, current, p_confid):
