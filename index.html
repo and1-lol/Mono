@@ -135,6 +135,7 @@ button:disabled {
 
 .up { background: #20a879; }
 .down { background: #df4c59; }
+
 .reset {
   background: #39445b;
   width: 100%;
@@ -213,8 +214,8 @@ button:disabled {
     <div class="panel wager-panel">
       <div class="label">Wager Zone</div>
 
-      <div class="timer" id="timer">60</div>
-      <div class="status" id="status">Choose your direction.</div>
+      <div class="timer" id="timer">--</div>
+      <div class="status" id="status">Loading market...</div>
 
       <input id="amount" type="number" min="1" step="1" value="10">
 
@@ -237,27 +238,45 @@ button:disabled {
 
 <script>
 let pyodide;
-let running = false;
-let interval;
-let elapsed = 0;
+
+let marketTimer = null;
+let roundActive = false;
+
+let roundTicks = 0;
 let startingPrice = 0;
 let wagerAmount = 0;
 let direction = "";
+
+let lastPrice = 0;
+let lastBalance = 0;
+let lastConfidence = 50;
+
 let history = [];
 
 const $ = id => document.getElementById(id);
 
+
+// DISPLAY
+
 function display(data) {
+  lastPrice = data.price;
+  lastBalance = data.balance;
+  lastConfidence = data.confidence;
+
   $("price").textContent = Number(data.price).toFixed(2);
   $("confidence").textContent = data.confidence + "%";
   $("balance").textContent = data.balance + " pts";
 }
+
 
 function controls(enabled) {
   $("up").disabled = !enabled;
   $("down").disabled = !enabled;
   $("reset").disabled = !enabled;
 }
+
+
+// GRAPH
 
 function drawGraph() {
   const canvas = $("chart");
@@ -308,91 +327,120 @@ function drawGraph() {
   ctx.stroke();
 }
 
+
 function addPrice(price) {
   history.push(price);
 
-  if (history.length > 100) history.shift();
+  if (history.length > 100) {
+    history.shift();
+  }
 
   drawGraph();
 }
+
+
+// INITIALIZE / RESET
 
 async function initializeGame() {
   const data = JSON.parse(
     await pyodide.runPythonAsync("ui_init()")
   );
 
-  history = [data.price];
+  roundActive = false;
+  roundTicks = 0;
+
+  history = [];
+
   display(data);
   addPrice(data.price);
 
-  $("timer").textContent = "60";
-  $("status").textContent = "Choose your direction.";
+  $("timer").textContent = "--";
+  $("status").textContent = "Market is live. Choose your direction.";
   $("amount").disabled = false;
 
   controls(true);
 }
 
+
+// CONTINUOUS MARKET LOOP
+
+async function marketTick() {
+  try {
+    const data = JSON.parse(
+      await pyodide.runPythonAsync("ui_tick()")
+    );
+
+    display(data);
+    addPrice(data.price);
+
+    // Only the wager timer depends on whether a wager is active.
+    if (roundActive) {
+      roundTicks--;
+
+      $("timer").textContent =
+        (roundTicks * 0.5).toFixed(1);
+
+      if (roundTicks <= 0) {
+        await finishRound();
+      }
+    }
+
+  } catch (error) {
+    console.error(error);
+
+    if (roundActive) {
+      roundActive = false;
+      $("amount").disabled = false;
+      controls(true);
+    }
+
+    $("status").textContent = "Error: " + error.message;
+
+  } finally {
+    // Schedule the next market update after this one finishes.
+    marketTimer = setTimeout(marketTick, 500);
+  }
+}
+
+
+// START A WAGER
+
 async function startRound(choice) {
-  if (running) return;
+  if (roundActive) return;
 
   const amount = Number($("amount").value);
-  const balance = Number(
-    $("balance").textContent.replace(" pts", "")
-  );
 
   if (!Number.isInteger(amount) || amount <= 0) {
-    $("status").textContent = "Enter a valid whole-number wager.";
+    $("status").textContent =
+      "Enter a valid whole-number wager.";
     return;
   }
 
-  if (amount > balance) {
+  if (amount > lastBalance) {
     $("status").textContent = "Not enough points.";
     return;
   }
 
-  running = true;
-  elapsed = 0;
+  roundActive = true;
+
+  roundTicks = 30;
   direction = choice;
   wagerAmount = amount;
-  startingPrice = Number($("price").textContent);
+
+  // Record the market price at the time of the wager.
+  startingPrice = lastPrice;
 
   controls(false);
   $("amount").disabled = true;
 
+  $("timer").textContent = "15.0";
+
   $("status").textContent =
     "Wager placed: " + amount + " points.";
-
-  interval = setInterval(async () => {
-    elapsed++;
-
-    try {
-      const updateConfidence = elapsed % 10 === 0;
-
-      const data = JSON.parse(
-        await pyodide.runPythonAsync(
-          `ui_tick(${updateConfidence ? "True" : "False"})`
-        )
-      );
-
-      display(data);
-      addPrice(data.price);
-
-      $("timer").textContent = 60 - elapsed;
-
-      if (elapsed >= 60) {
-        clearInterval(interval);
-        await finishRound();
-      }
-    } catch (error) {
-      clearInterval(interval);
-      running = false;
-      controls(true);
-      $("amount").disabled = false;
-      $("status").textContent = "Error: " + error.message;
-      console.error(error);
-    }
-  }, 1000);
 }
+
+
+// SETTLE A WAGER
 
 async function finishRound() {
   const result = JSON.parse(
@@ -402,35 +450,51 @@ async function finishRound() {
   );
 
   display(result);
-  running = false;
 
-  $("timer").textContent = "0";
+  roundActive = false;
+  roundTicks = 0;
+
+  $("timer").textContent = "0.0";
   $("amount").disabled = false;
+
   controls(true);
 
   if (result.result === "win") {
-    $("status").textContent = "Won! +" + wagerAmount + " points.";
+    $("status").textContent =
+      "Won! +" + wagerAmount + " points.";
+
   } else if (result.result === "loss") {
-    $("status").textContent = "Lost " + wagerAmount + " points.";
+    $("status").textContent =
+      "Lost " + wagerAmount + " points.";
+
   } else {
     $("status").textContent = "Price unchanged. Tie!";
   }
 }
+
+
+// PYTHON ENGINE
 
 async function boot() {
   try {
     pyodide = await loadPyodide();
 
     const response = await fetch("main.py");
-    if (!response.ok) throw new Error("Could not load main.py");
+
+    if (!response.ok) {
+      throw new Error("Could not load main.py");
+    }
 
     await pyodide.runPythonAsync(await response.text());
 
+    // JavaScript-to-Python bridge.
     await pyodide.runPythonAsync(`
+
 import json
 
 def ui_init():
     global ui_balance, ui_price, ui_confidence
+
     ui_balance, ui_price = initialize()
     ui_confidence = 50
 
@@ -440,19 +504,20 @@ def ui_init():
         "confidence": ui_confidence
     })
 
-def ui_tick(update_confidence):
+
+def ui_tick():
     global ui_price, ui_confidence
 
+    # Price and confidence both update every market tick.
     ui_price = movement(ui_price, ui_confidence)
-
-    if update_confidence:
-        ui_confidence = confidence(ui_confidence)
+    ui_confidence = confidence(ui_confidence)
 
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence
     })
+
 
 def ui_settle(amount, direction, starting_price):
     global ui_balance, ui_price
@@ -467,9 +532,11 @@ def ui_settle(amount, direction, starting_price):
     if won:
         ui_balance += amount
         result = "win"
+
     elif lost:
         ui_balance -= amount
         result = "loss"
+
     else:
         result = "tie"
 
@@ -479,10 +546,18 @@ def ui_settle(amount, direction, starting_price):
         "confidence": ui_confidence,
         "result": result
     })
+
 `);
 
     $("loading").textContent = "ENGINE ONLINE";
+
     await initializeGame();
+
+    // Start the market ONCE.
+    // It continues running independently of wagers.
+    if (marketTimer === null) {
+      marketTick();
+    }
 
   } catch (error) {
     $("loading").textContent = "Engine error";
@@ -491,16 +566,30 @@ def ui_settle(amount, direction, starting_price):
   }
 }
 
-$("up").addEventListener("click", () => startRound("up"));
-$("down").addEventListener("click", () => startRound("down"));
+
+// BUTTONS
+
+$("up").addEventListener("click", () => {
+  startRound("up");
+});
+
+$("down").addEventListener("click", () => {
+  startRound("down");
+});
 
 $("reset").addEventListener("click", async () => {
-  if (!running) await initializeGame();
+  if (!roundActive) {
+    await initializeGame();
+  }
 });
 
 window.addEventListener("resize", drawGraph);
 
+
+// START
+
 boot();
+
 </script>
 </body>
 </html>
