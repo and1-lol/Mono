@@ -709,7 +709,7 @@ def ui_tick():
     global ui_price, ui_confidence
 
     # Price and confidence both update every market tick.
-    ui_price = movement(ui_price, ui_confidence)
+    ui_price, ui_confidence = movement(ui_price, ui_confidence)
     ui_confidence = confidence(ui_confidence)
 
     return json.dumps({
