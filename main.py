@@ -8,12 +8,11 @@ def initialize():
 
 def movement(past_price, m_confid): #is to also be called idlely
   fluct = round(random.uniform(0,10),2)
-  confid = m_confid / 50
-  margin = random.randint(1,2)
-  if margin == 1:
-    past_price += fluct * confid * 2
-  if margin == 2:
-    past_price -= fluct * confid * 2
+  margin = random.randint(1,99) < m_confid
+  if margin:
+    past_price += fluct * 2
+  if not margin:
+    past_price -= fluct * 2
   if past_price <= 0:
     past_price = 30
   return past_price
