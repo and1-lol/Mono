@@ -14,7 +14,7 @@ def movement(past_price, m_confid): #is to also be called idlely
   if not margin:
     past_price -= fluct * 2
   if past_price <= 0:
-    past_price = 30
+    past_price = 10
   return past_price
 
 def wager(bal, amount, current, p_confid):
@@ -46,7 +46,7 @@ def confidence(p_confid): #when displayed make sure it is a percent; also idle
   if margin == 2:
     p_confid -= fluct
   if p_confid < 1:
-    p_confid = 10
+    p_confid = 5
   if p_confid > 99:
-    p_confid = 90
+    p_confid = 95
   return p_confid
