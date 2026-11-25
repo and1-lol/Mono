@@ -8,15 +8,12 @@ def initialize():
 
 def movement(past_price, m_confid): #is to also be called idlely
   fluct = round(random.uniform(0,10),2)
-  if m_confid > 50:
-    confid = m_confid / 50
-  else:
-    confid = 2 / m_confid
+  confid = m_confid / 50
   margin = random.randint(1,2)
   if margin == 1:
-    past_price += fluct * confid
+    past_price += fluct * confid * 2
   if margin == 2:
-    past_price -= fluct * confid
+    past_price -= fluct * confid * 2
   if past_price <= 0:
     past_price = 30
   return past_price
@@ -24,9 +21,9 @@ def movement(past_price, m_confid): #is to also be called idlely
 def wager(bal, amount, current, p_confid):
   bench = current
   now = current
-  for _ in range(60):
+  for _ in range(30):
     now = movement(now, p_confid)
-    if _ % 10 == 0:
+    if _ % 3 == 0:
       p_confid = confidence(p_confid)
 
   if now > bench:
