@@ -172,7 +172,10 @@ input {
 .up-button { background: #159b63; }
 .down-button { background: #c83e45; }
 
-button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 .trade-price {
   font-size: 19px;
@@ -221,7 +224,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   font-size: 14px;
 }
 
-.loading { color: #ffdf00; text-align: center; margin: 20px; }
+.loading {
+  color: #ffdf00;
+  text-align: center;
+  margin: 20px;
+}
 
 @media (max-width: 750px) {
   body { padding: 9px; }
@@ -241,6 +248,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .price-value { font-size: 24px; }
   .stat-value { font-size: 21px; }
   .balance-value { font-size: 20px; }
+
   .balance-cell + .balance-cell { padding-left: 10px; }
 
   .action-grid { gap: 7px; }
@@ -251,6 +259,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .holding-note { font-size: 11px; }
 
   canvas { height: 145px; }
+
   .graph-heading { margin-bottom: 7px; }
   .graph-heading h2 { font-size: 15px; }
   .graph-info { gap: 10px; }
@@ -268,7 +277,9 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .new-game { padding: 11px; }
 }
 </style>
-</head><body>
+</head>
+
+<body>
 <div class="container">
 
   <header>
@@ -357,13 +368,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
           </button>
 
           <div class="direction-buttons">
-            <button class="up-button" id="upButton">
-              UP
-            </button>
-
-            <button class="down-button" id="downButton">
-              DOWN
-            </button>
+            <button class="up-button" id="upButton">UP</button>
+            <button class="down-button" id="downButton">DOWN</button>
           </div>
 
           <div class="timer" id="timer">15</div>
@@ -376,20 +382,29 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
           <div class="panel-title">CURRENT PRICE</div>
           <div class="trade-price" id="tradePrice">$0.00</div>
 
-          <div class="panel-title">TRADE ONE FRC</div>
-
-          <button
-            class="trade-button buy-button"
-            id="buyButton"
+          <div class="panel-title">AMOUNT OF FRC</div>
+          <input
+            type="number"
+            id="tradeAmount"
+            min="1"
+            step="1"
+            value="1"
           >
-            BUY 1 FRC
+
+          <button class="max-button" id="maxBuy">
+            MAX BUY
           </button>
 
-          <button
-            class="trade-button sell-button"
-            id="sellButton"
-          >
-            SELL 1 FRC
+          <button class="trade-button buy-button" id="buyButton">
+            BUY FRC
+          </button>
+
+          <button class="max-button" id="maxSell">
+            MAX SELL
+          </button>
+
+          <button class="trade-button sell-button" id="sellButton">
+            SELL FRC
           </button>
 
           <div class="holding-note" id="tradeStatus">
@@ -412,6 +427,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 <div class="loading" id="loading">
   Loading Mono Market...
 </div>
+
 <script>
 let pyodide;
 
@@ -436,8 +452,12 @@ async function initializePython() {
     pyodide = await loadPyodide();
 
     const response = await fetch("main.py");
-    const pythonCode = await response.text();
 
+    if (!response.ok) {
+      throw new Error("Could not find main.py");
+    }
+
+    const pythonCode = await response.text();
     await pyodide.runPythonAsync(pythonCode);
 
     await pyodide.runPythonAsync(`
@@ -485,14 +505,15 @@ def ui_tick():
         "frc_balance": ui_frc_balance
     })
 
-def ui_trade(buy):
+def ui_trade(buy, amount):
     global ui_balance, ui_frc_balance
 
     ui_balance, ui_frc_balance = buy_sell(
         ui_price,
         ui_balance,
         ui_frc_balance,
-        buy
+        buy,
+        amount
     )
 
     return json.dumps({
@@ -533,20 +554,48 @@ def ui_settle(amount, direction, starting_price):
     const saved = loadSavedMarket();
 
     if (saved) {
-      const restored = await pyodide.runPythonAsync(`
+      const values = [
+        Number(saved.balance),
+        Number(saved.price),
+        Number(saved.confidence),
+        Number(saved.frcBalance)
+      ];
+
+      if (values.every(Number.isFinite) &&
+          values[0] >= 0 &&
+          values[1] > 0 &&
+          values[2] >= 1 &&
+          values[2] <= 99 &&
+          values[3] >= 0) {
+
+        const restored = await pyodide.runPythonAsync(`
 ui_restore(
-    ${Number(saved.balance)},
-    ${Number(saved.price)},
-    ${Number(saved.confidence)},
-    ${Number(saved.frcBalance)}
+    ${values[0]},
+    ${values[1]},
+    ${values[2]},
+    ${values[3]}
 )
 `);
 
-      display(JSON.parse(restored));
-      history = Array.isArray(saved.history) ? saved.history : [];
+        display(JSON.parse(restored));
+        history = Array.isArray(saved.history)
+          ? saved.history.filter(Number.isFinite).slice(-3000)
+          : [];
+
+      } else {
+        localStorage.removeItem(SAVE_KEY);
+        const initialized = await pyodide.runPythonAsync("ui_init()");
+        display(JSON.parse(initialized));
+        history = [lastPrice];
+      }
+
     } else {
       const initialized = await pyodide.runPythonAsync("ui_init()");
       display(JSON.parse(initialized));
+      history = [lastPrice];
+    }
+
+    if (history.length === 0) {
       history = [lastPrice];
     }
 
@@ -585,6 +634,7 @@ function saveMarket() {
       frcBalance: frcBalance,
       history: history.slice(-3000)
     }));
+
   } catch (error) {
     console.error("Market saving failed:", error);
   }
@@ -621,10 +671,20 @@ function display(data) {
 }
 
 function updateTradeButtons() {
+  const buyMax = lastPrice > 0
+    ? Math.floor(balance / lastPrice)
+    : 0;
+
   document.getElementById("buyButton").disabled =
-    roundActive || balance < lastPrice;
+    roundActive || buyMax < 1;
 
   document.getElementById("sellButton").disabled =
+    roundActive || frcBalance < 1;
+
+  document.getElementById("maxBuy").disabled =
+    roundActive || buyMax < 1;
+
+  document.getElementById("maxSell").disabled =
     roundActive || frcBalance < 1;
 }
 
@@ -636,11 +696,22 @@ function controls(enabled) {
 
   updateTradeButtons();
 }
-</script>
-<script>
+
 function maxBet() {
   document.getElementById("amount").value =
     Math.max(0, balance).toFixed(2);
+}
+
+function maxBuy() {
+  if (lastPrice <= 0) return;
+
+  const amount = Math.floor(balance / lastPrice);
+
+  document.getElementById("tradeAmount").value = amount;
+}
+
+function maxSell() {
+  document.getElementById("tradeAmount").value = frcBalance;
 }
 
 function addPrice(price) {
@@ -766,6 +837,7 @@ async function marketTick() {
       if (roundTicks <= 0) {
         await finishRound();
       }
+
     } else {
       saveMarket();
     }
@@ -828,15 +900,18 @@ async function finishRound() {
   if (data.result === "win") {
     document.getElementById("status").textContent =
       "You won " + wagerAmount.toFixed(2) + " points!";
+
   } else if (data.result === "loss") {
     document.getElementById("status").textContent =
       "You lost " + wagerAmount.toFixed(2) + " points.";
+
   } else {
     document.getElementById("status").textContent =
       "Tie! No points won or lost.";
   }
 
   document.getElementById("timer").textContent = "15";
+
   controls(true);
   updateTargetDisplay();
   saveMarket();
@@ -845,32 +920,45 @@ async function finishRound() {
 async function tradeFrc(buy) {
   if (!pyodide || roundActive) return;
 
-  if (buy && balance < lastPrice) {
+  const amount = Number(
+    document.getElementById("tradeAmount").value
+  );
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    document.getElementById("tradeStatus").textContent =
+      "Enter a valid whole number.";
+    return;
+  }
+
+  if (buy && balance < lastPrice * amount) {
     document.getElementById("tradeStatus").textContent =
       "Not enough points!";
     return;
   }
 
-  if (!buy && frcBalance < 1) {
+  if (!buy && frcBalance < amount) {
     document.getElementById("tradeStatus").textContent =
-      "You don't own any FRC.";
+      "Not enough FRC!";
     return;
   }
 
   try {
     const result = await pyodide.runPythonAsync(
-      "ui_trade(" + (buy ? "True" : "False") + ")"
+      "ui_trade(" +
+      (buy ? "True" : "False") +
+      "," + amount + ")"
     );
 
     display(JSON.parse(result));
 
     document.getElementById("tradeStatus").textContent =
-      buy ? "Bought 1 FRC!" : "Sold 1 FRC!";
+      (buy ? "Bought " : "Sold ") + amount + " FRC!";
 
     saveMarket();
 
   } catch (error) {
     console.error("Trade failed:", error);
+
     document.getElementById("tradeStatus").textContent =
       "Trade failed.";
   }
@@ -890,7 +978,10 @@ async function newGame() {
   history = [lastPrice];
 
   document.getElementById("amount").value = "5";
+  document.getElementById("tradeAmount").value = "1";
+
   document.getElementById("timer").textContent = "15";
+
   document.getElementById("status").textContent =
     "Place your wager!";
 
@@ -903,6 +994,23 @@ async function newGame() {
   saveMarket();
 }
 
+function setRange(selected) {
+  range = selected;
+
+  document.querySelectorAll(".range-buttons button")
+    .forEach(button => button.classList.remove("active"));
+
+  const buttonId = {
+    "30": "range30",
+    "5": "range5",
+    "all": "rangeAll"
+  }[selected];
+
+  document.getElementById(buttonId).classList.add("active");
+
+  drawGraph();
+}
+
 document.getElementById("maxBet").addEventListener(
   "click", maxBet
 );
@@ -913,6 +1021,14 @@ document.getElementById("upButton").addEventListener(
 
 document.getElementById("downButton").addEventListener(
   "click", () => startRound("down")
+);
+
+document.getElementById("maxBuy").addEventListener(
+  "click", maxBuy
+);
+
+document.getElementById("maxSell").addEventListener(
+  "click", maxSell
 );
 
 document.getElementById("buyButton").addEventListener(
@@ -938,22 +1054,6 @@ document.getElementById("range5").addEventListener(
 document.getElementById("rangeAll").addEventListener(
   "click", () => setRange("all")
 );
-
-function setRange(selected) {
-  range = selected;
-
-  document.querySelectorAll(".range-buttons button")
-    .forEach(button => button.classList.remove("active"));
-
-  const buttonId = {
-    "30": "range30",
-    "5": "range5",
-    "all": "rangeAll"
-  }[selected];
-
-  document.getElementById(buttonId).classList.add("active");
-  drawGraph();
-}
 
 window.addEventListener("resize", drawGraph);
 
