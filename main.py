@@ -18,26 +18,28 @@ def movement(past_price, m_confid): #is to also be called idlely
     m_confid = 45
   return past_price, m_confid
 
-def wager(bal, amount, current, p_confid):
-  bench = current
-  now = current
-  for _ in range(30):
-    now = movement(now, p_confid)
-    if _ % 3 == 0:
-      p_confid = confidence(p_confid)
-
+def credit(bal, amount, now, bench):
   if now > bench:
     bal += amount
   if now < bench:
     bal -= amount
-  if now == bal:
-    pass
 
   if bal < 0:
-    bal, now = initialize()
-    return None
+    bal, cry = initialize()
+    return bal, cry, True
 
-  return bal, now, p_confid
+  return bal, None, False
+
+def buy_sell(frc_price, bal, frc_bal, bors): #bors is to be a true or false statement
+  if bors:
+    if bal >= frc_price:
+      bal -= frc_price
+      frc_bal += 1
+  if not bors:
+    if frc_bal > 0:
+      bal += frc_price
+      frc_bal -= 1
+  return bal, frc_bal
 
 def confidence(p_confid): #when displayed make sure it is a percent; also idle
   fluct = random.randint(0,5)
@@ -47,7 +49,7 @@ def confidence(p_confid): #when displayed make sure it is a percent; also idle
   if margin == 2:
     p_confid -= fluct
   if p_confid < 1:
-    p_confid = 5
+    p_confid = 10
   if p_confid > 99:
-    p_confid = 95
+    p_confid = 90
   return p_confid
