@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,6 +66,17 @@ h1 { margin: 0; font-size: 28px; }
 .red { color: #ff6262; }
 .neutral { color: white; }
 
+.balance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.balance-cell + .balance-cell {
+  border-left: 1px solid #30415a;
+  padding-left: 14px;
+}
+
 .graph-heading {
   display: flex;
   justify-content: space-between;
@@ -89,6 +99,7 @@ canvas {
 }
 
 .range-buttons { display: flex; gap: 7px; margin-top: 9px; }
+
 button {
   cursor: pointer;
   border: none;
@@ -109,7 +120,24 @@ button {
   color: #111827;
 }
 
-.wager-panel h2 { margin: 0 0 14px; font-size: 19px; }
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.action-card {
+  min-width: 0;
+  background: #1b293d;
+  border: 1px solid #30415a;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.action-card h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
 
 input {
   width: 100%;
@@ -146,6 +174,29 @@ input {
 
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.trade-price {
+  font-size: 19px;
+  font-weight: bold;
+  margin: 3px 0 10px;
+}
+
+.trade-button {
+  width: 100%;
+  color: white;
+  padding: 12px 8px;
+  margin-top: 7px;
+}
+
+.buy-button { background: #159b63; }
+.sell-button { background: #c83e45; }
+
+.holding-note {
+  color: #9ca9bd;
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 15px;
+}
+
 .timer {
   font-size: 30px;
   font-weight: bold;
@@ -172,10 +223,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .loading { color: #ffdf00; text-align: center; margin: 20px; }
 
-/* Phone layout */
 @media (max-width: 750px) {
   body { padding: 9px; }
-
   header { margin-bottom: 10px; }
   h1 { font-size: 23px; }
   .subtitle { font-size: 11px; }
@@ -191,11 +240,17 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .price-value { font-size: 24px; }
   .stat-value { font-size: 21px; }
+  .balance-value { font-size: 20px; }
+  .balance-cell + .balance-cell { padding-left: 10px; }
 
-  .balance-value { font-size: 22px; }
+  .action-grid { gap: 7px; }
+  .action-card { padding: 9px; }
+  .action-card h2 { font-size: 15px; margin-bottom: 8px; }
+  .trade-price { font-size: 16px; margin-bottom: 7px; }
+  .trade-button { padding: 10px 5px; font-size: 12px; }
+  .holding-note { font-size: 11px; }
 
-  canvas { height: 175px; }
-
+  canvas { height: 145px; }
   .graph-heading { margin-bottom: 7px; }
   .graph-heading h2 { font-size: 15px; }
   .graph-info { gap: 10px; }
@@ -205,30 +260,21 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .range-buttons { margin-top: 6px; }
   .range-buttons button { padding: 7px 10px; font-size: 12px; }
 
-  .wager-panel h2 { font-size: 17px; margin-bottom: 9px; }
   input { padding: 9px; margin: 5px 0 7px; }
   .max-button { padding: 9px; margin-bottom: 7px; }
   .direction-buttons button { padding: 11px; }
   .timer { font-size: 25px; margin: 7px 0; }
   .status { margin-top: 5px; }
-
   .new-game { padding: 11px; }
 }
-
 </style>
-</head>
-
-<body>
+</head><body>
 <div class="container">
 
-<header>
-  <h1>Mono Market</h1>
-  <div class="subtitle">Fork Coin · FRC</div>
-</header>
-
-<div id="loading" class="loading">Loading market...</div>
-
-<div id="app" style="display:none;">
+  <header>
+    <h1>Mono Market</h1>
+    <div class="subtitle">Fork Coin · FRC</div>
+  </header>
 
   <div class="market-stats">
     <div class="stat">
@@ -244,25 +290,37 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   <div class="dashboard">
 
-    <div>
+    <div class="left-column">
+
       <div class="panel">
-        <div class="panel-title">YOUR BALANCE</div>
-        <div class="balance-value" id="balance">50.00 points</div>
+        <div class="balance-grid">
+
+          <div class="balance-cell">
+            <div class="panel-title">YOUR BALANCE</div>
+            <div class="balance-value" id="balance">50.00 points</div>
+          </div>
+
+          <div class="balance-cell">
+            <div class="panel-title">FRC HOLDINGS</div>
+            <div class="balance-value" id="frcBalance">0 FRC</div>
+          </div>
+
+        </div>
       </div>
 
       <div class="panel">
         <div class="graph-heading">
-          <h2>Fork Coin Price</h2>
+          <h2>Market Chart</h2>
 
           <div class="graph-info">
             <div class="graph-metric">
               <div class="panel-title">PRICE TO BEAT</div>
-              <div class="graph-metric-value" id="targetPrice">—</div>
+              <div class="graph-metric-value" id="priceToBeat">--</div>
             </div>
 
             <div class="graph-metric">
-              <div class="panel-title">CHANGE VS TARGET</div>
-              <div class="graph-metric-value neutral" id="targetChange">—</div>
+              <div class="panel-title">CHANGE</div>
+              <div class="graph-metric-value" id="change">--</div>
             </div>
           </div>
         </div>
@@ -270,92 +328,182 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
         <canvas id="chart"></canvas>
 
         <div class="range-buttons">
-          <button class="active" id="range30" onclick="setRange(60,'range30')">30 sec</button>
-          <button id="range5" onclick="setRange(600,'range5')">5 min</button>
-          <button id="rangeAll" onclick="setRange('all','rangeAll')">All time</button>
+          <button class="active" id="range30">30 SEC</button>
+          <button id="range5">5 MIN</button>
+          <button id="rangeAll">ALL TIME</button>
         </div>
       </div>
+
     </div>
 
-    <div>
-      <div class="panel wager-panel">
-        <h2>Wager Zone</h2>
+    <div class="right-column">
 
-        <div class="panel-title">WAGER AMOUNT</div>
+      <div class="action-grid">
 
-        <input id="amount" type="number" min="0.01" step="0.01" value="10" placeholder="Enter wager">
+        <div class="action-card">
+          <h2>Wager Zone</h2>
 
-        <button class="max-button" id="maxBet" onclick="maxBet()">MAX BET</button>
+          <div class="panel-title">WAGER AMOUNT</div>
+          <input
+            type="number"
+            id="amount"
+            min="0.01"
+            step="0.01"
+            value="5"
+          >
 
-        <div class="direction-buttons">
-          <button class="up-button" id="up" onclick="startRound('up')">UP</button>
-          <button class="down-button" id="down" onclick="startRound('down')">DOWN</button>
+          <button class="max-button" id="maxBet">
+            MAX BET
+          </button>
+
+          <div class="direction-buttons">
+            <button class="up-button" id="upButton">
+              UP
+            </button>
+
+            <button class="down-button" id="downButton">
+              DOWN
+            </button>
+          </div>
+
+          <div class="timer" id="timer">15</div>
+          <div class="status" id="status">Place your wager!</div>
         </div>
 
-        <div class="timer" id="timer">15.0</div>
-        <div class="status" id="status">Choose a direction to begin.</div>
+        <div class="action-card">
+          <h2>FRC Trading</h2>
+
+          <div class="panel-title">CURRENT PRICE</div>
+          <div class="trade-price" id="tradePrice">$0.00</div>
+
+          <div class="panel-title">TRADE ONE FRC</div>
+
+          <button
+            class="trade-button buy-button"
+            id="buyButton"
+          >
+            BUY 1 FRC
+          </button>
+
+          <button
+            class="trade-button sell-button"
+            id="sellButton"
+          >
+            SELL 1 FRC
+          </button>
+
+          <div class="holding-note" id="tradeStatus">
+            Trade FRC using your balance.
+          </div>
+        </div>
+
       </div>
+
     </div>
 
   </div>
 
-  <button class="new-game" id="newGame" onclick="newGame()">NEW GAME</button>
+  <button class="new-game" id="newGame">
+    NEW GAME
+  </button>
 
 </div>
-</div>
 
+<div class="loading" id="loading">
+  Loading Mono Market...
+</div>
 <script>
 let pyodide;
+
 let balance = 50;
+let frcBalance = 0;
 let lastPrice = 0;
 let lastConfidence = 50;
+
 let history = [];
-let range = 60;
+let range = "30";
+
 let roundActive = false;
-let roundTicks = 30;
+let roundTicks = 0;
 let wagerAmount = 0;
-let direction = "";
-let startingPrice = null;
+let direction = null;
+let startingPrice = 0;
 
-const $ = id => document.getElementById(id);
-
-
-// PYTHON
+const SAVE_KEY = "monoMarketSave";
 
 async function initializePython() {
-  pyodide = await loadPyodide();
+  try {
+    pyodide = await loadPyodide();
 
-  const response = await fetch("main.py");
-  if (!response.ok) throw new Error("Could not load main.py");
+    const response = await fetch("main.py");
+    const pythonCode = await response.text();
 
-  const source = await response.text();
-  await pyodide.runPythonAsync(source);
+    await pyodide.runPythonAsync(pythonCode);
 
-  await pyodide.runPythonAsync(`
+    await pyodide.runPythonAsync(`
 import json
 
 def ui_init():
-    global ui_balance, ui_price, ui_confidence
+    global ui_balance, ui_price, ui_confidence, ui_frc_balance
+
     ui_balance, ui_price = initialize()
     ui_confidence = 50
+    ui_frc_balance = 0
+
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
-        "confidence": ui_confidence
+        "confidence": ui_confidence,
+        "frc_balance": ui_frc_balance
+    })
+
+def ui_restore(bal, price, confid, frc):
+    global ui_balance, ui_price, ui_confidence, ui_frc_balance
+
+    ui_balance = bal
+    ui_price = price
+    ui_confidence = confid
+    ui_frc_balance = frc
+
+    return json.dumps({
+        "balance": ui_balance,
+        "price": ui_price,
+        "confidence": ui_confidence,
+        "frc_balance": ui_frc_balance
     })
 
 def ui_tick():
     global ui_price, ui_confidence
+
     ui_price, ui_confidence = movement(ui_price, ui_confidence)
     ui_confidence = confidence(ui_confidence)
+
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
-        "confidence": ui_confidence
+        "confidence": ui_confidence,
+        "frc_balance": ui_frc_balance
+    })
+
+def ui_trade(buy):
+    global ui_balance, ui_frc_balance
+
+    ui_balance, ui_frc_balance = buy_sell(
+        ui_price,
+        ui_balance,
+        ui_frc_balance,
+        buy
+    )
+
+    return json.dumps({
+        "balance": ui_balance,
+        "price": ui_price,
+        "confidence": ui_confidence,
+        "frc_balance": ui_frc_balance
     })
 
 def ui_settle(amount, direction, starting_price):
-    global ui_balance, ui_price
+    global ui_balance
 
     if direction == "up":
         won = ui_price > starting_price
@@ -377,223 +525,272 @@ def ui_settle(amount, direction, starting_price):
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence,
+        "frc_balance": ui_frc_balance,
         "result": result
     })
 `);
 
-  const data = JSON.parse(await pyodide.runPythonAsync("ui_init()"));
+    const saved = loadSavedMarket();
 
-  display(data);
-  addPrice(data.price);
+    if (saved) {
+      const restored = await pyodide.runPythonAsync(`
+ui_restore(
+    ${Number(saved.balance)},
+    ${Number(saved.price)},
+    ${Number(saved.confidence)},
+    ${Number(saved.frcBalance)}
+)
+`);
 
-  $("loading").style.display = "none";
-  $("app").style.display = "block";
+      display(JSON.parse(restored));
+      history = Array.isArray(saved.history) ? saved.history : [];
+    } else {
+      const initialized = await pyodide.runPythonAsync("ui_init()");
+      display(JSON.parse(initialized));
+      history = [lastPrice];
+    }
 
-  drawGraph();
-  marketTick();
+    document.getElementById("loading").style.display = "none";
+
+    drawGraph();
+    updateTargetDisplay();
+
+    setInterval(marketTick, 500);
+
+  } catch (error) {
+    document.getElementById("loading").textContent =
+      "Could not load market: " + error.message;
+    console.error(error);
+  }
 }
 
+function loadSavedMarket() {
+  try {
+    const saved = localStorage.getItem(SAVE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (error) {
+    console.error("Save loading failed:", error);
+    return null;
+  }
+}
 
-// DISPLAY
+function saveMarket() {
+  try {
+    if (!pyodide) return;
+
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      balance: balance,
+      price: lastPrice,
+      confidence: lastConfidence,
+      frcBalance: frcBalance,
+      history: history.slice(-3000)
+    }));
+  } catch (error) {
+    console.error("Market saving failed:", error);
+  }
+}
 
 function display(data) {
   balance = data.balance;
   lastPrice = data.price;
   lastConfidence = data.confidence;
+  frcBalance = data.frc_balance;
 
-  $("balance").textContent = Number(balance).toFixed(2) + " points";
-  $("price").textContent = "$" + Number(lastPrice).toFixed(2);
-  $("confidence").textContent = Number(lastConfidence).toFixed(0) + "%";
+  document.getElementById("balance").textContent =
+    balance.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }) + " points";
+
+  document.getElementById("frcBalance").textContent =
+    frcBalance.toLocaleString("en-US") + " FRC";
+
+  document.getElementById("price").textContent =
+    "$" + lastPrice.toFixed(2);
+
+  document.getElementById("tradePrice").textContent =
+    "$" + lastPrice.toFixed(2);
+
+  document.getElementById("confidence").textContent =
+    lastConfidence + "%";
+
+  document.getElementById("amount").max = balance;
 
   updateTargetDisplay();
-  $("amount").max = balance;
+  updateTradeButtons();
+}
+
+function updateTradeButtons() {
+  document.getElementById("buyButton").disabled =
+    roundActive || balance < lastPrice;
+
+  document.getElementById("sellButton").disabled =
+    roundActive || frcBalance < 1;
 }
 
 function controls(enabled) {
-  $("amount").disabled = !enabled;
-  $("maxBet").disabled = !enabled;
-  $("up").disabled = !enabled;
-  $("down").disabled = !enabled;
-}
+  document.getElementById("amount").disabled = !enabled;
+  document.getElementById("maxBet").disabled = !enabled;
+  document.getElementById("upButton").disabled = !enabled;
+  document.getElementById("downButton").disabled = !enabled;
 
+  updateTradeButtons();
+}
+</script>
+<script>
 function maxBet() {
-  $("amount").value = Number(balance).toFixed(2);
+  document.getElementById("amount").value =
+    Math.max(0, balance).toFixed(2);
 }
-
-
-// HISTORY
 
 function addPrice(price) {
-  history.push(Number(price));
+  history.push(price);
+
+  if (history.length > 3000) {
+    history.shift();
+  }
+
   drawGraph();
 }
-
-function setRange(value, buttonId) {
-  range = value;
-
-  document.querySelectorAll(".range-buttons button")
-    .forEach(button => button.classList.remove("active"));
-
-  $(buttonId).classList.add("active");
-  drawGraph();
-}
-
-
-// TARGET
 
 function updateTargetDisplay() {
-  if (startingPrice === null) {
-    $("targetPrice").textContent = "—";
-    $("targetChange").textContent = "—";
-    $("targetChange").className = "graph-metric-value neutral";
+  const target = document.getElementById("priceToBeat");
+  const change = document.getElementById("change");
+
+  if (!roundActive) {
+    target.textContent = "--";
+    change.textContent = "--";
+    change.className = "graph-metric-value";
     return;
   }
 
-  $("targetPrice").textContent = "$" + startingPrice.toFixed(2);
+  target.textContent = "$" + startingPrice.toFixed(2);
 
-  const change = ((lastPrice - startingPrice) / startingPrice) * 100;
-  const sign = change > 0 ? "+" : "";
+  const difference =
+    ((lastPrice - startingPrice) / startingPrice) * 100;
 
-  $("targetChange").textContent = sign + change.toFixed(2) + "%";
+  change.textContent =
+    (difference >= 0 ? "+" : "") + difference.toFixed(2) + "%";
 
-  if (change > 0) {
-    $("targetChange").className = "graph-metric-value green";
-  } else if (change < 0) {
-    $("targetChange").className = "graph-metric-value red";
-  } else {
-    $("targetChange").className = "graph-metric-value neutral";
-  }
+  change.className =
+    "graph-metric-value " +
+    (difference > 0 ? "green" : difference < 0 ? "red" : "");
 }
 
-
-// GRAPH
-
 function drawGraph() {
-  const canvas = $("chart");
+  const canvas = document.getElementById("chart");
   const ctx = canvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
 
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
 
   canvas.width = width * dpr;
   canvas.height = height * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, width, height);
 
-  let data = range === "all" ? history.slice() : history.slice(-range);
+  let points = history.slice();
 
-  if (data.length < 2) {
-    ctx.fillStyle = "#9ca9bd";
-    ctx.font = "14px Arial";
-    ctx.fillText("Waiting for market data...", 15, 30);
-    return;
+  if (range === "30") {
+    points = points.slice(-60);
+  } else if (range === "5") {
+    points = points.slice(-600);
   }
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const padding = { top: 15, bottom: 28, left: 55, right: 12 };
-  const graphWidth = width - padding.left - padding.right;
-  const graphHeight = height - padding.top - padding.bottom;
-  const spread = Math.max(max - min, 1);
-  const low = min - spread * 0.12;
-  const high = max + spread * 0.12;
-  const yRange = high - low;
+  if (points.length < 2) return;
 
-  ctx.font = "11px Arial";
-  ctx.fillStyle = "#9ca9bd";
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const spread = Math.max(max - min, 1);
+
+  const padding = 12;
+  const graphWidth = width - padding * 2;
+  const graphHeight = height - padding * 2;
+
   ctx.strokeStyle = "#30415a";
   ctx.lineWidth = 1;
 
-  for (let i = 0; i <= 4; i++) {
-    const y = padding.top + (graphHeight / 4) * i;
-    const value = high - (yRange / 4) * i;
+  for (let i = 0; i < 4; i++) {
+    const y = padding + (graphHeight / 3) * i;
 
     ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(width - padding.right, y);
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
     ctx.stroke();
-
-    ctx.fillText("$" + value.toFixed(1), 3, y + 4);
   }
 
+  ctx.strokeStyle = "#39d98a";
+  ctx.lineWidth = 2;
   ctx.beginPath();
 
-  data.forEach((price, i) => {
-    const x = padding.left + (i / (data.length - 1)) * graphWidth;
-    const y = padding.top + ((high - price) / yRange) * graphHeight;
+  points.forEach((price, i) => {
+    const x = padding + (i / (points.length - 1)) * graphWidth;
+    const y =
+      height - padding -
+      ((price - min) / spread) * graphHeight;
 
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
 
-  // Green chart line
-  ctx.strokeStyle = "#39d98a";
-  ctx.lineWidth = 2;
   ctx.stroke();
 
-  const finalY = padding.top +
-    ((high - data[data.length - 1]) / yRange) * graphHeight;
+  const lastY =
+    height - padding -
+    ((points[points.length - 1] - min) / spread) * graphHeight;
 
-  ctx.beginPath();
-  ctx.arc(width - padding.right, finalY, 4, 0, Math.PI * 2);
   ctx.fillStyle = "#39d98a";
+  ctx.beginPath();
+  ctx.arc(width - padding, lastY, 3, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.fillStyle = "#9ca9bd";
-  ctx.fillText("Earlier", padding.left, height - 5);
-  ctx.textAlign = "right";
-  ctx.fillText("Now", width - padding.right, height - 5);
-  ctx.textAlign = "left";
 }
 
-
-// MARKET LOOP
-
 async function marketTick() {
+  if (!pyodide) return;
+
   try {
-    const data = JSON.parse(await pyodide.runPythonAsync("ui_tick()"));
+    const result = await pyodide.runPythonAsync("ui_tick()");
+    const data = JSON.parse(result);
 
     display(data);
-    addPrice(data.price);
+    addPrice(lastPrice);
 
     if (roundActive) {
       roundTicks--;
-      $("timer").textContent = (roundTicks * 0.5).toFixed(1);
 
-      if (roundTicks <= 0) await finishRound();
+      document.getElementById("timer").textContent =
+        Math.max(0, roundTicks / 2).toFixed(1);
+
+      if (roundTicks <= 0) {
+        await finishRound();
+      }
+    } else {
+      saveMarket();
     }
 
   } catch (error) {
-    console.error(error);
-
-    if (roundActive) {
-      roundActive = false;
-      controls(true);
-    }
-
-    $("status").textContent = "Error: " + error.message;
-
-  } finally {
-    setTimeout(marketTick, 500);
+    console.error("Market tick failed:", error);
   }
 }
 
+async function startRound(selectedDirection) {
+  if (!pyodide || roundActive) return;
 
-// WAGERS
-
-function startRound(selectedDirection) {
-  if (roundActive) return;
-
-  const amount = Number($("amount").value);
+  const amount = Number(
+    document.getElementById("amount").value
+  );
 
   if (!Number.isFinite(amount) || amount <= 0) {
-    $("status").textContent = "Enter a valid wager.";
+    document.getElementById("status").textContent =
+      "Enter a valid wager.";
     return;
   }
 
   if (amount > balance) {
-    $("status").textContent = "Not enough balance.";
+    document.getElementById("status").textContent =
+      "Not enough points!";
     return;
   }
 
@@ -604,13 +801,12 @@ function startRound(selectedDirection) {
   roundActive = true;
   roundTicks = 30;
 
-  $("timer").textContent = "15.0";
-  $("status").textContent =
-    selectedDirection.toUpperCase() + " wager active — " +
-    amount.toFixed(2) + " points";
+  document.getElementById("timer").textContent = "15.0";
+  document.getElementById("status").textContent =
+    "Wager active!";
 
-  updateTargetDisplay();
   controls(false);
+  updateTargetDisplay();
 }
 
 async function finishRound() {
@@ -618,51 +814,150 @@ async function finishRound() {
 
   roundActive = false;
 
-  const result = JSON.parse(
-    await pyodide.runPythonAsync(
-      `ui_settle(${wagerAmount}, "${direction}", ${startingPrice})`
-    )
+  const result = await pyodide.runPythonAsync(
+    "ui_settle(" +
+    wagerAmount + "," +
+    JSON.stringify(direction) + "," +
+    startingPrice +
+    ")"
   );
 
-  display(result);
-  controls(true);
+  const data = JSON.parse(result);
+  display(data);
 
-  if (result.result === "win") {
-    $("status").textContent = "YOU WON! +" + wagerAmount.toFixed(2) + " points";
-  } else if (result.result === "loss") {
-    $("status").textContent = "YOU LOST! -" + wagerAmount.toFixed(2) + " points";
+  if (data.result === "win") {
+    document.getElementById("status").textContent =
+      "You won " + wagerAmount.toFixed(2) + " points!";
+  } else if (data.result === "loss") {
+    document.getElementById("status").textContent =
+      "You lost " + wagerAmount.toFixed(2) + " points.";
   } else {
-    $("status").textContent = "TIE! No balance change.";
+    document.getElementById("status").textContent =
+      "Tie! No points won or lost.";
+  }
+
+  document.getElementById("timer").textContent = "15";
+  controls(true);
+  updateTargetDisplay();
+  saveMarket();
+}
+
+async function tradeFrc(buy) {
+  if (!pyodide || roundActive) return;
+
+  if (buy && balance < lastPrice) {
+    document.getElementById("tradeStatus").textContent =
+      "Not enough points!";
+    return;
+  }
+
+  if (!buy && frcBalance < 1) {
+    document.getElementById("tradeStatus").textContent =
+      "You don't own any FRC.";
+    return;
+  }
+
+  try {
+    const result = await pyodide.runPythonAsync(
+      "ui_trade(" + (buy ? "True" : "False") + ")"
+    );
+
+    display(JSON.parse(result));
+
+    document.getElementById("tradeStatus").textContent =
+      buy ? "Bought 1 FRC!" : "Sold 1 FRC!";
+
+    saveMarket();
+
+  } catch (error) {
+    console.error("Trade failed:", error);
+    document.getElementById("tradeStatus").textContent =
+      "Trade failed.";
   }
 }
 
-
-// NEW GAME
-
 async function newGame() {
-  if (roundActive) return;
+  if (!pyodide) return;
 
-  const data = JSON.parse(await pyodide.runPythonAsync("ui_init()"));
+  roundActive = false;
+  wagerAmount = 0;
+  direction = null;
+  startingPrice = 0;
 
-  history = [];
-  startingPrice = null;
+  const result = await pyodide.runPythonAsync("ui_init()");
+  display(JSON.parse(result));
 
-  $("amount").value = "10";
-  $("timer").textContent = "15.0";
-  $("status").textContent = "Choose a direction to begin.";
+  history = [lastPrice];
+
+  document.getElementById("amount").value = "5";
+  document.getElementById("timer").textContent = "15";
+  document.getElementById("status").textContent =
+    "Place your wager!";
+
+  document.getElementById("tradeStatus").textContent =
+    "Trade FRC using your balance.";
 
   controls(true);
-  display(data);
-  addPrice(data.price);
+  updateTargetDisplay();
+  drawGraph();
+  saveMarket();
+}
+
+document.getElementById("maxBet").addEventListener(
+  "click", maxBet
+);
+
+document.getElementById("upButton").addEventListener(
+  "click", () => startRound("up")
+);
+
+document.getElementById("downButton").addEventListener(
+  "click", () => startRound("down")
+);
+
+document.getElementById("buyButton").addEventListener(
+  "click", () => tradeFrc(true)
+);
+
+document.getElementById("sellButton").addEventListener(
+  "click", () => tradeFrc(false)
+);
+
+document.getElementById("newGame").addEventListener(
+  "click", newGame
+);
+
+document.getElementById("range30").addEventListener(
+  "click", () => setRange("30")
+);
+
+document.getElementById("range5").addEventListener(
+  "click", () => setRange("5")
+);
+
+document.getElementById("rangeAll").addEventListener(
+  "click", () => setRange("all")
+);
+
+function setRange(selected) {
+  range = selected;
+
+  document.querySelectorAll(".range-buttons button")
+    .forEach(button => button.classList.remove("active"));
+
+  const buttonId = {
+    "30": "range30",
+    "5": "range5",
+    "all": "rangeAll"
+  }[selected];
+
+  document.getElementById(buttonId).classList.add("active");
   drawGraph();
 }
 
 window.addEventListener("resize", drawGraph);
 
-initializePython().catch(error => {
-  console.error(error);
-  $("loading").textContent = "Could not load Mono Market: " + error.message;
-});
+initializePython();
 </script>
 </body>
 </html>
