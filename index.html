@@ -644,6 +644,26 @@ function loadSavedMarket() {
   }
 }
 
+function shortNumber(num) {
+  const units = [
+    { value: 1e18, symbol: "Qi" },
+    { value: 1e15, symbol: "Qa" },
+    { value: 1e12, symbol: "T" },
+    { value: 1e9, symbol: "B" },
+    { value: 1e6, symbol: "M" },
+    { value: 1e3, symbol: "K" }
+  ];
+
+  for (const unit of units) {
+    if (Math.abs(num) >= unit.value) {
+      return (num / unit.value).toFixed(2)
+        .replace(/\.?0+$/, "") + unit.symbol;
+    }
+  }
+
+  return Math.floor(num).toLocaleString();
+}
+
 function saveMarket() {
   try {
     if (!pyodide) return;
@@ -668,13 +688,10 @@ function display(data) {
   frcBalance = data.frc_balance;
 
   document.getElementById("balance").textContent =
-    balance.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) + " points";
+    shortNumber(balance);
 
   document.getElementById("frcBalance").textContent =
-    frcBalance.toLocaleString("en-US") + " FRC";
+    shortNumber(frcBalance);
 
   document.getElementById("price").textContent =
     "$" + lastPrice.toFixed(2);
