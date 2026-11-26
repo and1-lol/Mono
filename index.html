@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -183,11 +184,24 @@ button:disabled {
   margin: 3px 0 10px;
 }
 
-.trade-button {
+/* NEW: compact FRC trading button grid */
+.trade-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.trade-actions button {
   width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 4px;
+  font-size: 12px;
+}
+
+.trade-button {
   color: white;
-  padding: 12px 8px;
-  margin-top: 7px;
 }
 
 .buy-button { background: #159b63; }
@@ -255,8 +269,13 @@ button:disabled {
   .action-card { padding: 9px; }
   .action-card h2 { font-size: 15px; margin-bottom: 8px; }
   .trade-price { font-size: 16px; margin-bottom: 7px; }
-  .trade-button { padding: 10px 5px; font-size: 12px; }
   .holding-note { font-size: 11px; }
+
+  .trade-actions { gap: 6px; }
+  .trade-actions button {
+    padding: 10px 3px;
+    font-size: 11px;
+  }
 
   canvas { height: 145px; }
 
@@ -391,21 +410,23 @@ button:disabled {
             value="1"
           >
 
-          <button class="max-button" id="maxBuy">
-            MAX BUY
-          </button>
+          <div class="trade-actions">
+            <button class="trade-button buy-button" id="buyButton">
+              BUY FRC
+            </button>
 
-          <button class="trade-button buy-button" id="buyButton">
-            BUY FRC
-          </button>
+            <button class="trade-button sell-button" id="sellButton">
+              SELL FRC
+            </button>
 
-          <button class="max-button" id="maxSell">
-            MAX SELL
-          </button>
+            <button class="max-button" id="maxBuy">
+              MAX BUY
+            </button>
 
-          <button class="trade-button sell-button" id="sellButton">
-            SELL FRC
-          </button>
+            <button class="max-button" id="maxSell">
+              MAX SELL
+            </button>
+          </div>
 
           <div class="holding-note" id="tradeStatus">
             Trade FRC using your balance.
