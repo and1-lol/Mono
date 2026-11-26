@@ -981,7 +981,7 @@ async function tradeFrc(buy) {
     console.error("Trade failed:", error);
 
     document.getElementById("tradeStatus").textContent =
-      "Trade failed.";
+      "Trade failed: " + error.message;
   }
 }
 
