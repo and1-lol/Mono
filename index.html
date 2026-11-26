@@ -3,164 +3,105 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mono Market</title>
-
 <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  padding: 20px;
+  padding: 16px;
   background: #101827;
-  color: #ffffff;
+  color: white;
   font-family: Arial, sans-serif;
 }
 
-.container {
-  max-width: 1150px;
-  margin: auto;
-}
+.container { max-width: 1150px; margin: auto; }
 
-header {
-  margin-bottom: 22px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 30px;
-}
-
-.subtitle {
-  color: #9ca9bd;
-  margin-top: 6px;
-}
+header { margin-bottom: 16px; }
+h1 { margin: 0; font-size: 28px; }
+.subtitle { color: #9ca9bd; margin-top: 5px; font-size: 13px; }
 
 .dashboard {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
 .panel {
   background: #1b293d;
   border: 1px solid #30415a;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 18px;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
 .panel-title {
   color: #aab8cb;
-  font-size: 14px;
-  margin-bottom: 10px;
+  font-size: 12px;
+  margin-bottom: 7px;
 }
 
 .market-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .stat {
   background: #1b293d;
   border: 1px solid #30415a;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 13px;
 }
 
-.stat-value {
-  font-size: 27px;
-  font-weight: bold;
-  margin-top: 7px;
-}
+.stat-value { font-size: 24px; font-weight: bold; margin-top: 5px; }
+.price-value { font-size: 29px; font-weight: bold; }
+.balance-value { font-size: 25px; font-weight: bold; }
 
-.balance-value {
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.price-value {
-  font-size: 32px;
-  font-weight: bold;
-}
-
-.green {
-  color: #39d98a;
-}
-
-.red {
-  color: #ff6262;
-}
-
-.neutral {
-  color: #ffffff;
-}
+.green { color: #39d98a; }
+.red { color: #ff6262; }
+.neutral { color: white; }
 
 .graph-heading {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
-.graph-heading h2 {
-  font-size: 18px;
-  margin: 0;
-}
+.graph-heading h2 { font-size: 17px; margin: 0; }
 
-.graph-info {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.graph-metric {
-  min-width: 105px;
-}
-
-.graph-metric .panel-title {
-  margin-bottom: 5px;
-}
-
-.graph-metric-value {
-  font-size: 18px;
-  font-weight: bold;
-}
+.graph-info { display: flex; gap: 14px; flex-wrap: wrap; }
+.graph-metric { min-width: 90px; }
+.graph-metric-value { font-size: 16px; font-weight: bold; }
 
 canvas {
   width: 100%;
-  height: 280px;
+  height: 250px;
   display: block;
 }
 
-.range-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
+.range-buttons { display: flex; gap: 7px; margin-top: 9px; }
 button {
   cursor: pointer;
   border: none;
-  border-radius: 7px;
-  padding: 11px 15px;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 10px 13px;
+  font-size: 13px;
   font-weight: bold;
 }
 
 .range-buttons button {
   background: #30415a;
   color: #dce5f2;
-  padding: 8px 12px;
+  padding: 7px 11px;
 }
 
 .range-buttons button.active {
@@ -168,104 +109,112 @@ button {
   color: #111827;
 }
 
-.wager-panel h2 {
-  margin: 0 0 18px;
-  font-size: 20px;
-}
+.wager-panel h2 { margin: 0 0 14px; font-size: 19px; }
 
 input {
   width: 100%;
-  padding: 13px;
-  border-radius: 7px;
+  padding: 11px;
+  border-radius: 6px;
   border: 1px solid #455873;
   background: #101827;
   color: white;
-  font-size: 17px;
-  margin: 8px 0 12px;
+  font-size: 16px;
+  margin: 7px 0 10px;
 }
 
 .max-button {
   width: 100%;
   background: #ffdf00;
   color: #111827;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .direction-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .direction-buttons button {
-  font-size: 17px;
-  padding: 15px;
+  font-size: 16px;
+  padding: 13px;
   color: white;
 }
 
-.up-button {
-  background: #159b63;
-}
+.up-button { background: #159b63; }
+.down-button { background: #c83e45; }
 
-.down-button {
-  background: #c83e45;
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .timer {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: bold;
   text-align: center;
-  margin: 15px 0;
+  margin: 11px 0;
 }
 
 .status {
   color: #c5d1e2;
   text-align: center;
-  min-height: 22px;
-  margin-top: 12px;
+  min-height: 20px;
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 .new-game {
   width: 100%;
   background: #30415a;
   color: white;
-  padding: 15px;
-  margin-top: 4px;
-  font-size: 16px;
+  padding: 13px;
+  margin-top: 2px;
+  font-size: 14px;
 }
 
-.new-game:hover {
-  background: #405574;
-}
+.loading { color: #ffdf00; text-align: center; margin: 20px; }
 
-.loading {
-  color: #ffdf00;
-  text-align: center;
-  margin: 20px;
-}
-
+/* Phone layout */
 @media (max-width: 750px) {
-  body {
-    padding: 12px;
-  }
+  body { padding: 9px; }
+
+  header { margin-bottom: 10px; }
+  h1 { font-size: 23px; }
+  .subtitle { font-size: 11px; }
 
   .dashboard {
     grid-template-columns: 1fr;
+    gap: 0;
   }
 
-  .price-value {
-    font-size: 27px;
-  }
+  .market-stats { gap: 7px; margin-bottom: 9px; }
+  .stat { padding: 10px; }
+  .panel { padding: 11px; margin-bottom: 9px; }
 
-  canvas {
-    height: 230px;
-  }
+  .price-value { font-size: 24px; }
+  .stat-value { font-size: 21px; }
+
+  .balance-value { font-size: 22px; }
+
+  canvas { height: 175px; }
+
+  .graph-heading { margin-bottom: 7px; }
+  .graph-heading h2 { font-size: 15px; }
+  .graph-info { gap: 10px; }
+  .graph-metric { min-width: 80px; }
+  .graph-metric-value { font-size: 14px; }
+
+  .range-buttons { margin-top: 6px; }
+  .range-buttons button { padding: 7px 10px; font-size: 12px; }
+
+  .wager-panel h2 { font-size: 17px; margin-bottom: 9px; }
+  input { padding: 9px; margin: 5px 0 7px; }
+  .max-button { padding: 9px; margin-bottom: 7px; }
+  .direction-buttons button { padding: 11px; }
+  .timer { font-size: 25px; margin: 7px 0; }
+  .status { margin-top: 5px; }
+
+  .new-game { padding: 11px; }
 }
+
 </style>
 </head>
 
@@ -295,16 +244,13 @@ button:disabled {
 
   <div class="dashboard">
 
-    <!-- LEFT COLUMN -->
     <div>
-
       <div class="panel">
         <div class="panel-title">YOUR BALANCE</div>
         <div class="balance-value" id="balance">50.00 points</div>
       </div>
 
       <div class="panel">
-
         <div class="graph-heading">
           <h2>Fork Coin Price</h2>
 
@@ -328,97 +274,61 @@ button:disabled {
           <button id="range5" onclick="setRange(600,'range5')">5 min</button>
           <button id="rangeAll" onclick="setRange('all','rangeAll')">All time</button>
         </div>
-
       </div>
     </div>
 
-    <!-- RIGHT COLUMN -->
     <div>
-
       <div class="panel wager-panel">
-
         <h2>Wager Zone</h2>
 
         <div class="panel-title">WAGER AMOUNT</div>
 
-        <input
-          id="amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          value="10"
-          placeholder="Enter wager"
-        >
+        <input id="amount" type="number" min="0.01" step="0.01" value="10" placeholder="Enter wager">
 
-        <button class="max-button" id="maxBet" onclick="maxBet()">
-          MAX BET
-        </button>
+        <button class="max-button" id="maxBet" onclick="maxBet()">MAX BET</button>
 
         <div class="direction-buttons">
-          <button class="up-button" id="up" onclick="startRound('up')">
-            UP
-          </button>
-
-          <button class="down-button" id="down" onclick="startRound('down')">
-            DOWN
-          </button>
+          <button class="up-button" id="up" onclick="startRound('up')">UP</button>
+          <button class="down-button" id="down" onclick="startRound('down')">DOWN</button>
         </div>
 
         <div class="timer" id="timer">15.0</div>
-
-        <div class="status" id="status">
-          Choose a direction to begin.
-        </div>
-
+        <div class="status" id="status">Choose a direction to begin.</div>
       </div>
-
     </div>
 
   </div>
 
-  <button class="new-game" id="newGame" onclick="newGame()">
-    NEW GAME
-  </button>
+  <button class="new-game" id="newGame" onclick="newGame()">NEW GAME</button>
 
 </div>
 </div>
 
 <script>
 let pyodide;
-
 let balance = 50;
 let lastPrice = 0;
 let lastConfidence = 50;
-
 let history = [];
-
 let range = 60;
-
 let roundActive = false;
 let roundTicks = 30;
 let wagerAmount = 0;
 let direction = "";
 let startingPrice = null;
 
-let marketTimer = null;
-
 const $ = id => document.getElementById(id);
 
 
-// ---------------- PYTHON ----------------
+// PYTHON
 
 async function initializePython() {
-
   pyodide = await loadPyodide();
 
   const response = await fetch("main.py");
-
-  if (!response.ok) {
-    throw new Error("Could not load main.py");
-  }
+  if (!response.ok) throw new Error("Could not load main.py");
 
   const source = await response.text();
-
   await pyodide.runPythonAsync(source);
 
   await pyodide.runPythonAsync(`
@@ -426,29 +336,23 @@ import json
 
 def ui_init():
     global ui_balance, ui_price, ui_confidence
-
     ui_balance, ui_price = initialize()
     ui_confidence = 50
-
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence
     })
-
 
 def ui_tick():
     global ui_price, ui_confidence
-
     ui_price, ui_confidence = movement(ui_price, ui_confidence)
     ui_confidence = confidence(ui_confidence)
-
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence
     })
-
 
 def ui_settle(amount, direction, starting_price):
     global ui_balance, ui_price
@@ -463,11 +367,9 @@ def ui_settle(amount, direction, starting_price):
     if won:
         ui_balance += amount
         result = "win"
-
     elif lost:
         ui_balance -= amount
         result = "loss"
-
     else:
         result = "tie"
 
@@ -479,90 +381,67 @@ def ui_settle(amount, direction, starting_price):
     })
 `);
 
-  const data = JSON.parse(
-    await pyodide.runPythonAsync("ui_init()")
-  );
+  const data = JSON.parse(await pyodide.runPythonAsync("ui_init()"));
 
   display(data);
-
   addPrice(data.price);
 
   $("loading").style.display = "none";
   $("app").style.display = "block";
 
   drawGraph();
-
   marketTick();
 }
 
 
-// ---------------- DISPLAY ----------------
+// DISPLAY
 
 function display(data) {
-
   balance = data.balance;
   lastPrice = data.price;
   lastConfidence = data.confidence;
 
-  $("balance").textContent =
-    Number(balance).toFixed(2) + " points";
-
-  $("price").textContent =
-    "$" + Number(lastPrice).toFixed(2);
-
-  $("confidence").textContent =
-    Number(lastConfidence).toFixed(0) + "%";
+  $("balance").textContent = Number(balance).toFixed(2) + " points";
+  $("price").textContent = "$" + Number(lastPrice).toFixed(2);
+  $("confidence").textContent = Number(lastConfidence).toFixed(0) + "%";
 
   updateTargetDisplay();
-
   $("amount").max = balance;
 }
 
-
 function controls(enabled) {
-
   $("amount").disabled = !enabled;
   $("maxBet").disabled = !enabled;
   $("up").disabled = !enabled;
   $("down").disabled = !enabled;
 }
 
-
-// ---------------- MAX BET ----------------
-
 function maxBet() {
-
   $("amount").value = Number(balance).toFixed(2);
 }
 
 
-// ---------------- PRICE HISTORY ----------------
+// HISTORY
 
 function addPrice(price) {
-
   history.push(Number(price));
-
   drawGraph();
 }
 
-
 function setRange(value, buttonId) {
-
   range = value;
 
   document.querySelectorAll(".range-buttons button")
     .forEach(button => button.classList.remove("active"));
 
   $(buttonId).classList.add("active");
-
   drawGraph();
 }
 
 
-// ---------------- TARGET PRICE ----------------
+// TARGET
 
 function updateTargetDisplay() {
-
   if (startingPrice === null) {
     $("targetPrice").textContent = "—";
     $("targetChange").textContent = "—";
@@ -570,16 +449,12 @@ function updateTargetDisplay() {
     return;
   }
 
-  $("targetPrice").textContent =
-    "$" + startingPrice.toFixed(2);
+  $("targetPrice").textContent = "$" + startingPrice.toFixed(2);
 
-  const change =
-    ((lastPrice - startingPrice) / startingPrice) * 100;
-
+  const change = ((lastPrice - startingPrice) / startingPrice) * 100;
   const sign = change > 0 ? "+" : "";
 
-  $("targetChange").textContent =
-    sign + change.toFixed(2) + "%";
+  $("targetChange").textContent = sign + change.toFixed(2) + "%";
 
   if (change > 0) {
     $("targetChange").className = "graph-metric-value green";
@@ -591,13 +466,11 @@ function updateTargetDisplay() {
 }
 
 
-// ---------------- GRAPH ----------------
+// GRAPH
 
 function drawGraph() {
-
   const canvas = $("chart");
   const ctx = canvas.getContext("2d");
-
   const dpr = window.devicePixelRatio || 1;
 
   const width = canvas.clientWidth;
@@ -605,18 +478,10 @@ function drawGraph() {
 
   canvas.width = width * dpr;
   canvas.height = height * dpr;
-
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
   ctx.clearRect(0, 0, width, height);
 
-  let data;
-
-  if (range === "all") {
-    data = history.slice();
-  } else {
-    data = history.slice(-range);
-  }
+  let data = range === "all" ? history.slice() : history.slice(-range);
 
   if (data.length < 2) {
     ctx.fillStyle = "#9ca9bd";
@@ -627,132 +492,79 @@ function drawGraph() {
 
   const min = Math.min(...data);
   const max = Math.max(...data);
-
-  const padding = {
-    top: 15,
-    bottom: 28,
-    left: 55,
-    right: 12
-  };
-
-  const graphWidth =
-    width - padding.left - padding.right;
-
-  const graphHeight =
-    height - padding.top - padding.bottom;
-
+  const padding = { top: 15, bottom: 28, left: 55, right: 12 };
+  const graphWidth = width - padding.left - padding.right;
+  const graphHeight = height - padding.top - padding.bottom;
   const spread = Math.max(max - min, 1);
-
   const low = min - spread * 0.12;
   const high = max + spread * 0.12;
-
   const yRange = high - low;
 
-  // Grid and Y labels
   ctx.font = "11px Arial";
   ctx.fillStyle = "#9ca9bd";
   ctx.strokeStyle = "#30415a";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i++) {
-
-    const y =
-      padding.top + (graphHeight / 4) * i;
-
-    const value =
-      high - (yRange / 4) * i;
+    const y = padding.top + (graphHeight / 4) * i;
+    const value = high - (yRange / 4) * i;
 
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
     ctx.lineTo(width - padding.right, y);
     ctx.stroke();
 
-    ctx.fillText(
-      "$" + value.toFixed(1),
-      3,
-      y + 4
-    );
+    ctx.fillText("$" + value.toFixed(1), 3, y + 4);
   }
 
-  // Price line
   ctx.beginPath();
 
   data.forEach((price, i) => {
+    const x = padding.left + (i / (data.length - 1)) * graphWidth;
+    const y = padding.top + ((high - price) / yRange) * graphHeight;
 
-    const x =
-      padding.left +
-      (i / (data.length - 1)) * graphWidth;
-
-    const y =
-      padding.top +
-      ((high - price) / yRange) * graphHeight;
-
-    if (i === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   });
 
-  ctx.strokeStyle = "#ffdf00";
+  // Green chart line
+  ctx.strokeStyle = "#39d98a";
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Current price marker
-  const finalY =
-    padding.top +
+  const finalY = padding.top +
     ((high - data[data.length - 1]) / yRange) * graphHeight;
 
   ctx.beginPath();
-  ctx.arc(
-    width - padding.right,
-    finalY,
-    4,
-    0,
-    Math.PI * 2
-  );
-
-  ctx.fillStyle = "#ffdf00";
+  ctx.arc(width - padding.right, finalY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#39d98a";
   ctx.fill();
 
-  // X labels
   ctx.fillStyle = "#9ca9bd";
   ctx.fillText("Earlier", padding.left, height - 5);
-
   ctx.textAlign = "right";
   ctx.fillText("Now", width - padding.right, height - 5);
   ctx.textAlign = "left";
 }
 
 
-// ---------------- MARKET LOOP ----------------
+// MARKET LOOP
 
 async function marketTick() {
-
   try {
-
-    const data = JSON.parse(
-      await pyodide.runPythonAsync("ui_tick()")
-    );
+    const data = JSON.parse(await pyodide.runPythonAsync("ui_tick()"));
 
     display(data);
-
     addPrice(data.price);
 
     if (roundActive) {
-
       roundTicks--;
+      $("timer").textContent = (roundTicks * 0.5).toFixed(1);
 
-      $("timer").textContent =
-        (roundTicks * 0.5).toFixed(1);
-
-      if (roundTicks <= 0) {
-        await finishRound();
-      }
+      if (roundTicks <= 0) await finishRound();
     }
 
   } catch (error) {
-
     console.error(error);
 
     if (roundActive) {
@@ -760,20 +572,17 @@ async function marketTick() {
       controls(true);
     }
 
-    $("status").textContent =
-      "Error: " + error.message;
+    $("status").textContent = "Error: " + error.message;
 
   } finally {
-
-    marketTimer = setTimeout(marketTick, 500);
+    setTimeout(marketTick, 500);
   }
 }
 
 
-// ---------------- WAGERING ----------------
+// WAGERS
 
 function startRound(selectedDirection) {
-
   if (roundActive) return;
 
   const amount = Number($("amount").value);
@@ -790,28 +599,21 @@ function startRound(selectedDirection) {
 
   wagerAmount = amount;
   direction = selectedDirection;
-
   startingPrice = lastPrice;
 
   roundActive = true;
   roundTicks = 30;
 
   $("timer").textContent = "15.0";
-
   $("status").textContent =
-    selectedDirection.toUpperCase() +
-    " wager active — " +
-    amount.toFixed(2) +
-    " points";
+    selectedDirection.toUpperCase() + " wager active — " +
+    amount.toFixed(2) + " points";
 
   updateTargetDisplay();
-
   controls(false);
 }
 
-
 async function finishRound() {
-
   if (!roundActive) return;
 
   roundActive = false;
@@ -823,73 +625,44 @@ async function finishRound() {
   );
 
   display(result);
-
   controls(true);
 
   if (result.result === "win") {
-
-    $("status").textContent =
-      "YOU WON! +" + wagerAmount.toFixed(2) + " points";
-
+    $("status").textContent = "YOU WON! +" + wagerAmount.toFixed(2) + " points";
   } else if (result.result === "loss") {
-
-    $("status").textContent =
-      "YOU LOST! -" + wagerAmount.toFixed(2) + " points";
-
+    $("status").textContent = "YOU LOST! -" + wagerAmount.toFixed(2) + " points";
   } else {
-
     $("status").textContent = "TIE! No balance change.";
   }
 }
 
 
-// ---------------- NEW GAME ----------------
+// NEW GAME
 
 async function newGame() {
-
   if (roundActive) return;
 
-  const data = JSON.parse(
-    await pyodide.runPythonAsync("ui_init()")
-  );
-
-  balance = data.balance;
-  lastPrice = data.price;
-  lastConfidence = data.confidence;
+  const data = JSON.parse(await pyodide.runPythonAsync("ui_init()"));
 
   history = [];
-
   startingPrice = null;
 
   $("amount").value = "10";
-
   $("timer").textContent = "15.0";
-
-  $("status").textContent =
-    "Choose a direction to begin.";
+  $("status").textContent = "Choose a direction to begin.";
 
   controls(true);
-
   display(data);
-
   addPrice(data.price);
-
   drawGraph();
 }
-
-
-// ---------------- START ----------------
 
 window.addEventListener("resize", drawGraph);
 
 initializePython().catch(error => {
-
   console.error(error);
-
-  $("loading").textContent =
-    "Could not load Mono Market: " + error.message;
+  $("loading").textContent = "Could not load Mono Market: " + error.message;
 });
-
 </script>
 </body>
 </html>
