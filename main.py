@@ -30,15 +30,15 @@ def credit(bal, amount, now, bench):
 
   return bal, None, False
 
-def buy_sell(frc_price, bal, frc_bal, bors): #bors is to be a true or false statement
+def buy_sell(frc_price, bal, frc_bal, bors, amount): #bors is to be a true or false statement
   if bors:
-    if bal >= frc_price:
-      bal -= frc_price
-      frc_bal += 1
+    if bal >= frc_price * amount:
+      bal -= frc_price * amount
+      frc_bal += 1 * amount
   if not bors:
-    if frc_bal > 0:
-      bal += frc_price
-      frc_bal -= 1
+    if frc_bal >= amount:
+      bal += frc_price * amount
+      frc_bal -= 1 * amount
   return bal, frc_bal
 
 def confidence(p_confid): #when displayed make sure it is a percent; also idle
