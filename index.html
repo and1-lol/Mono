@@ -78,6 +78,57 @@ h1 { margin: 0; font-size: 28px; }
   padding-left: 14px;
 }
 
+/* SCAnews ticker */
+.news-ticker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  margin-top: 10px;
+  padding: 7px 9px;
+  background: #252a32;
+  border: 1px solid #3b4655;
+  border-radius: 6px;
+}
+
+.news-brand {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border-radius: 3px;
+  background: #a51f27;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.news-window {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.news-headline {
+  display: inline-block;
+  min-width: 100%;
+  color: #f1f4f8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.news-headline.scrolling {
+  animation: news-scroll 18s linear infinite;
+  min-width: max-content;
+  padding-left: 100%;
+}
+
+@keyframes news-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
 .graph-heading {
   display: flex;
   justify-content: space-between;
@@ -184,7 +235,7 @@ button:disabled {
   margin: 3px 0 10px;
 }
 
-/* NEW: compact FRC trading button grid */
+/* Compact FRC trading button grid */
 .trade-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -200,10 +251,7 @@ button:disabled {
   font-size: 12px;
 }
 
-.trade-button {
-  color: white;
-}
-
+.trade-button { color: white; }
 .buy-button { background: #159b63; }
 .sell-button { background: #c83e45; }
 
@@ -264,6 +312,10 @@ button:disabled {
   .balance-value { font-size: 20px; }
 
   .balance-cell + .balance-cell { padding-left: 10px; }
+
+  .news-ticker { margin-top: 7px; padding: 6px 7px; gap: 7px; }
+  .news-brand { font-size: 11px; padding: 4px 6px; }
+  .news-headline { font-size: 11px; }
 
   .action-grid { gap: 7px; }
   .action-card { padding: 9px; }
@@ -335,6 +387,13 @@ button:disabled {
             <div class="balance-value" id="frcBalance">0 FRC</div>
           </div>
 
+        </div>
+
+        <div class="news-ticker" aria-label="Latest market news">
+          <div class="news-brand">SCAnews</div>
+          <div class="news-window">
+            <div class="news-headline" id="newsHeadline">Awaiting market news...</div>
+          </div>
         </div>
       </div>
 
@@ -456,6 +515,8 @@ let balance = 50;
 let frcBalance = 0;
 let lastPrice = 0;
 let lastConfidence = 50;
+let eventTime = 800;
+let latestHeadline = "";
 
 let history = [];
 let range = "30";
@@ -485,45 +546,53 @@ async function initializePython() {
 import json
 
 def ui_init():
-    global ui_balance, ui_price, ui_confidence, ui_frc_balance
+    global ui_balance, ui_price, ui_confidence, ui_frc_balance, ui_time, ui_headline
 
-    ui_balance, ui_price = initialize()
-    ui_confidence = 50
+    ui_balance, ui_price, ui_time, ui_confidence = initialize()
     ui_frc_balance = 0
+    ui_headline = ""
 
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence,
-        "frc_balance": ui_frc_balance
+        "frc_balance": ui_frc_balance,
+        "time": ui_time,
+        "head": None
     })
 
-def ui_restore(bal, price, confid, frc):
-    global ui_balance, ui_price, ui_confidence, ui_frc_balance
+def ui_restore(bal, price, confid, frc, saved_time, saved_headline):
+    global ui_balance, ui_price, ui_confidence, ui_frc_balance, ui_time, ui_headline
 
     ui_balance = bal
     ui_price = price
     ui_confidence = confid
     ui_frc_balance = frc
+    ui_time = saved_time
+    ui_headline = saved_headline or ""
 
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence,
-        "frc_balance": ui_frc_balance
+        "frc_balance": ui_frc_balance,
+        "time": ui_time,
+        "head": ui_headline or None
     })
 
 def ui_tick():
-    global ui_price, ui_confidence
+    global ui_price, ui_confidence, ui_time, ui_headline
 
-    ui_price, ui_confidence = movement(ui_price, ui_confidence)
-    ui_confidence = confidence(ui_confidence)
-
+    ui_headline, ui_price, ui_confidence, ui_time = tick(
+        ui_confidence, ui_price, ui_time
+    )
     return json.dumps({
         "balance": ui_balance,
         "price": ui_price,
         "confidence": ui_confidence,
-        "frc_balance": ui_frc_balance
+        "frc_balance": ui_frc_balance,
+        "time": ui_time,
+        "head": ui_headline
     })
 
 def ui_trade(buy, amount):
@@ -579,7 +648,8 @@ def ui_settle(amount, direction, starting_price):
         Number(saved.balance),
         Number(saved.price),
         Number(saved.confidence),
-        Number(saved.frcBalance)
+        Number(saved.frcBalance),
+        Number.isFinite(Number(saved.eventTime)) ? Number(saved.eventTime) : 800
       ];
 
       if (values.every(Number.isFinite) &&
@@ -594,7 +664,9 @@ ui_restore(
     ${values[0]},
     ${values[1]},
     ${values[2]},
-    ${values[3]}
+    ${values[3]},
+    ${values[4]},
+    ${JSON.stringify(saved.latestHeadline || "")}
 )
 `);
 
@@ -673,6 +745,8 @@ function saveMarket() {
       price: lastPrice,
       confidence: lastConfidence,
       frcBalance: frcBalance,
+      eventTime: eventTime,
+      latestHeadline: latestHeadline,
       history: history.slice(-3000)
     }));
 
@@ -686,6 +760,20 @@ function display(data) {
   lastPrice = data.price;
   lastConfidence = data.confidence;
   frcBalance = data.frc_balance;
+
+  if (Number.isFinite(data.time)) eventTime = data.time;
+
+  if (data.head) {
+    latestHeadline = data.head;
+    const ticker = document.getElementById("newsHeadline");
+    ticker.textContent = latestHeadline;
+    ticker.classList.remove("scrolling");
+    void ticker.offsetWidth;
+
+    if (ticker.scrollWidth > ticker.parentElement.clientWidth) {
+      ticker.classList.add("scrolling");
+    }
+  }
 
   document.getElementById("balance").textContent =
     shortNumber(balance);
@@ -744,7 +832,6 @@ function maxBuy() {
   if (lastPrice <= 0) return;
 
   const amount = Math.floor(balance / lastPrice);
-
   document.getElementById("tradeAmount").value = amount;
 }
 
@@ -1014,6 +1101,11 @@ async function newGame() {
   display(JSON.parse(result));
 
   history = [lastPrice];
+  latestHeadline = "";
+
+  document.getElementById("newsHeadline").textContent =
+    "Awaiting market news...";
+  document.getElementById("newsHeadline").classList.remove("scrolling");
 
   document.getElementById("amount").value = "5";
   document.getElementById("tradeAmount").value = "1";
