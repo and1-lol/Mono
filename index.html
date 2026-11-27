@@ -653,11 +653,12 @@ def ui_settle(amount, direction, starting_price):
       ];
 
       if (values.every(Number.isFinite) &&
-          values[0] >= 0 &&
-          values[1] > 0 &&
-          values[2] >= 1 &&
-          values[2] <= 99 &&
-          values[3] >= 0) {
+        values[0] >= 0 &&
+        values[1] > 0 &&
+        values[2] >= 1 &&
+        values[2] <= 99 &&
+        values[3] >= 0 &&
+        values[4] >= 1) {
 
         const restored = await pyodide.runPythonAsync(`
 ui_restore(
