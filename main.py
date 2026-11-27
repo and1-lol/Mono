@@ -7,12 +7,12 @@ def initialize():
   return bal, cry
 
 def movement(past_price, m_confid): #is to also be called idlely
-  fluct = round(random.uniform(0,10),2)
-  margin = random.randint(1,99) < m_confid
+  fluct = round(random.uniform(0,15),2)
+  margin = 75 < random.randint(1,99) + (m_confid * 0.5)
   if margin:
-    past_price += fluct * 2
+    past_price += fluct * 3
   if not margin:
-    past_price -= fluct * 2
+    past_price -= fluct * 3
   if past_price <= 0:
     past_price = 10
     m_confid = 45
