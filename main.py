@@ -74,6 +74,7 @@ def events(confid, time):
     choice = random.choice(events)
     heading, n_confid = choice
     n_confid = confid * n_confid
+    n_confid = round(n_confid)
     if n_confid > 99:
       n_confid = 99
     if n_confid < 1:
