@@ -77,7 +77,7 @@ def events(confid, time):
     if n_confid > 99:
       n_confid = 99
     if n_confid < 1:
-      n_confid
+      n_confid = 1
 
     return heading, n_confid, 800
 
