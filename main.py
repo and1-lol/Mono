@@ -65,8 +65,8 @@ def events(confid, time):
             ("In Rare Move, AI CEO Introduces Safety Measures", 2),
             ("Diplomacy Allows For New US-China Trade Relations", 1.5),
             ("AI Escapes Guardrails Causing a Cyberattack", 0.75),
-            ("Questions Arise After New Details About Cyber Incident", 0.5),
-            ("New Technology Allows for Farmers to Predict Crop Growth", 1.25),
+            ("Questions Arise After Details About Cyber Incident", 0.5),
+            ("Technology Allows for Farmers to Predict Crop Growth", 1.25),
             ("John Fork Continues to Have Everlasting Infleuence", 3),
             ("Market Approaches Recession as Stocks Tumble", 0.1)]
 
