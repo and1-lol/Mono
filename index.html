@@ -800,9 +800,7 @@ function display(data) {
     ticker.classList.remove("scrolling");
     void ticker.offsetWidth;
 
-    if (ticker.scrollWidth > ticker.parentElement.clientWidth) {
-      ticker.classList.add("scrolling");
-    }
+    ticker.classList.add("scrolling");
   }
 
   document.getElementById("balance").textContent =
