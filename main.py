@@ -15,7 +15,7 @@ def initialize():
   bal = 50
   cry = random.randint(200,500)
   m_confid = 50
-  time = 300
+  time = 210
   return bal, cry, time, m_confid
 
 def movement(past_price, m_confid): #is to also be called idlely
@@ -82,7 +82,7 @@ def events(confid, time):
     if n_confid < 1:
       n_confid = 1
 
-    return heading, n_confid, 300
+    return heading, n_confid, 210
 
   else:
     n_time = time - 1
