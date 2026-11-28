@@ -104,10 +104,18 @@ h1 { margin: 0; font-size: 28px; }
 }
 
 .news-window {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
+    min-width: 0;
+    width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.news-headline.scrolling {
+    animation: news-scroll 18s linear infinite;
+    width: max-content;
+    min-width: 0;
+    padding-left: 100%;
 }
 
 .news-brand {
@@ -127,12 +135,6 @@ h1 { margin: 0; font-size: 28px; }
     color: #f1f4f8;
     font-size: 9px;
     font-weight: 600;
-}
-
-.news-headline.scrolling {
-  animation: news-scroll 18s linear infinite;
-  min-width: max-content;
-  padding-left: 100%;
 }
 
 @keyframes news-scroll {
